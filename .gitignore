@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+.streamlit/secrets.toml
+
+# Old React prototype (superseded by index.html)
+rimali-pf/
+
+# Loose CSV duplicates at root (canonical copies live under rimali-pf-static/tradebooks/)
+tradebook-JWT515-EQ*.csv
+
+# One-off analysis scripts
+analyze_trades.py
+
+# CLI / editor state
+.claude/

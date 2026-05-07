@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Rimali Portfolio</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #111827;
+    --panel-2: #1f2937;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --dim: #64748b;
+    --pos: #34d399;
+    --neg: #fb7185;
+    --accent: #10b981;
+    --warn: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
+    font-feature-settings: "tnum" 1;
+    min-height: 100vh;
+    padding-bottom: 64px;
+  }
+  .app { max-width: 720px; margin: 0 auto; }
+  header {
+    padding: 20px 16px 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  header .sub { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+
+  /* Stat grid */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; margin-top: 12px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .stat .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .stat .value { font-size: 18px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .stat .sub { font-size: 11px; color: var(--dim); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .pos { color: var(--pos); }
+  .neg { color: var(--neg); }
+
+  /* Section header + button */
+  .section-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 16px 8px;
+  }
+  .section-head h2 { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+  .btn {
+    background: var(--panel-2); color: var(--text); border: 0; padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: white; font-weight: 500; padding: 8px 14px; }
+
+  /* Holdings table */
+  .table-wrap { margin: 0 16px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--panel); }
+  th { text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; color: var(--muted); font-weight: 500; letter-spacing: 0.05em; }
+  th.right, td.right { text-align: right; }
+  td { padding: 10px; border-top: 1px solid var(--border); vertical-align: top; font-variant-numeric: tabular-nums; }
+  td .sym { font-weight: 500; }
+  td .note { display: inline-block; margin-left: 4px; font-size: 9px; letter-spacing: 0.1em; color: var(--warn); }
+  td .meta { display: block; font-size: 11px; color: var(--dim); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  td .pct { display: block; font-size: 11px; }
+
+  /* Sub-tabs */
+  .subtabs { display: flex; gap: 6px; padding: 12px 16px 0; flex-wrap: wrap; }
+  .subtab {
+    background: var(--panel-2); color: var(--muted); border: 0; padding: 6px 12px;
+    border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .subtab.active { background: var(--accent); color: white; }
+
+  /* Lot list */
+  .lot-list { padding: 8px 16px 0; display: flex; flex-direction: column; gap: 8px; }
+  .lot {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-size: 13px;
+  }
+  .lot-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .lot-top .l-sym { font-weight: 500; }
+  .lot-top .l-pnl { font-variant-numeric: tabular-nums; }
+  .lot-top .l-pct { font-size: 11px; }
+  .lot-meta { font-size: 11px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .lot-date { font-size: 10px; color: var(--dim); margin-top: 2px; }
+
+  /* Filter input */
+  .input {
+    width: calc(100% - 32px); margin: 12px 16px 0;
+    padding: 8px 12px; border-radius: 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; font-family: inherit;
+  }
+  .input:focus { outline: none; border-color: var(--accent); }
+
+  /* Settings */
+  .settings { padding: 16px; }
+  .settings p { font-size: 13px; line-height: 1.5; color: var(--text); }
+  .settings .url-input { width: 100%; margin: 8px 0; padding: 10px; border-radius: 6px;
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    font-family: ui-monospace, "Consolas", monospace; font-size: 12px; word-break: break-all;
+  }
+  .settings .help {
+    margin-top: 16px; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel); font-size: 12px; color: var(--muted); line-height: 1.5;
+  }
+  .settings .help b { color: var(--text); display: block; margin-bottom: 6px; font-weight: 500; }
+  .settings .help ol { margin: 0; padding-left: 18px; }
+  .settings .help code { background: var(--panel-2); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+
+  .alert {
+    margin: 12px 16px 0; padding: 10px 12px;
+    border: 1px solid #b45309; background: rgba(180, 83, 9, 0.15);
+    color: #fcd34d; border-radius: 8px; font-size: 12px; line-height: 1.5;
+  }
+
+  /* Bottom tab bar */
+  nav.tabs {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+    background: rgba(15, 23, 42, 0.97); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: center;
+  }
+  nav.tabs .inner { max-width: 720px; width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  nav.tabs button {
+    background: transparent; border: 0; color: var(--muted);
+    font-size: 13px; font-family: inherit; padding: 14px 0; cursor: pointer;
+  }
+  nav.tabs button.active { color: var(--accent); font-weight: 500; }
+
+  .empty { padding: 20px 16px; color: var(--muted); font-size: 13px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Rimali · Portfolio</h1>
+      <p class="sub">Live LTPs from Google Finance · refreshed hourly</p>
+    </div>
+  </header>
+
+  <!-- Holdings tab -->
+  <section id="tab-holdings">
+    <div class="stats">
+      <div class="stat"><div class="label">Invested</div><div class="value" id="h-invested">—</div></div>
+      <div class="stat"><div class="label">Current value</div><div class="value" id="h-curval">—</div></div>
+      <div class="stat"><div class="label">Total P&amp;L</div><div class="value" id="h-pnl">—</div><div class="sub" id="h-pnl-pct">—</div></div>
+      <div class="stat"><div class="label">Last refresh</div><div class="value" id="h-last">—</div><div class="sub" id="h-last-sub">set price sheet in ⚙</div></div>
+    </div>
+    <div class="section-head">
+      <h2>Holdings (<span id="h-count">15</span>)</h2>
+      <button class="btn" id="btn-refresh">Refresh</button>
+    </div>
+    <div id="h-alert"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Instrument</th>
+          <th class="right">LTP</th>
+          <th class="right">Cur. val</th>
+          <th class="right">P&amp;L</th>
+        </tr></thead>
+        <tbody id="h-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Trades tab -->
+  <section id="tab-trades" class="hidden">
+    <div class="stats">
+      <div class="stat"><div class="label">Total trades</div><div class="value" id="t-count">—</div></div>
+      <div class="stat"><div class="label">Closed lots</div><div class="value" id="t-lots">—</div></div>
+      <div class="stat"><div class="label">Realised P&amp;L</div><div class="value" id="t-pnl">—</div><div class="sub" id="t-pnl-pct">—</div></div>
+      <div class="stat"><div class="label">Capital deployed</div><div class="value" id="t-deployed">—</div></div>
+    </div>
+    <div class="subtabs" id="t-subtabs">
+      <button class="subtab active" data-mode="summary">By symbol</button>
+      <button class="subtab" data-mode="winners">Winners</button>
+      <button class="subtab" data-mode="losers">Losers</button>
+      <button class="subtab" data-mode="all">All trades</button>
+    </div>
+    <div id="t-content"></div>
+  </section>
+
+  <!-- Settings tab -->
+  <section id="tab-settings" class="hidden">
+    <div class="settings">
+      <h2 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 8px 0;">Price feed</h2>
+      <p>
+        Paste the <b>published-to-web CSV URL</b> of your Google Sheet.
+        The sheet should have two columns: symbol and price, with prices coming from
+        <code>=GOOGLEFINANCE("NSE:"&amp;A2,"price")</code>.
+      </p>
+      <input id="s-url" class="url-input" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+      <button class="btn btn-primary" id="s-save">Save</button>
+      <span id="s-savedmsg" style="margin-left: 10px; color: var(--pos); font-size: 12px;"></span>
+      <div class="help">
+        <b>How to set up the sheet</b>
+        <ol>
+          <li>Create a Google Sheet. <b>A1</b>: <code>symbol</code>. <b>B1</b>: <code>price</code>.</li>
+          <li>From <b>A2</b> down list NSE tickers (AUROPHARMA, CHENNPETRO, …).</li>
+          <li>In <b>B2</b> paste <code>=GOOGLEFINANCE("NSE:"&amp;A2,"price")</code> and drag down.</li>
+          <li>File → Share → Publish to web → choose this sheet → CSV → Publish.</li>
+          <li>Copy the URL it gives you and paste it above.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <div class="inner">
+      <button data-tab="holdings" class="active">Holdings</button>
+      <button data-tab="trades">Trades</button>
+      <button data-tab="settings">⚙</button>
+    </div>
+  </nav>
+</div>
+
+<script>
+"use strict";
+
+// ============================================================
+// HOLDINGS — edit here as Rimali buys/sells.
+// ============================================================
+const HOLDINGS = [
+  { symbol: "AUROPHARMA",  qty: 235,   avgCost: 1383.90 },
+  { symbol: "CHENNPETRO",  qty: 318,   avgCost: 1021.51 },
+  { symbol: "CIEINDIA",    qty: 1692,  avgCost: 407.17 },
+  { symbol: "DATAPATTNS",  qty: 190,   avgCost: 3342.06 },
+  { symbol: "GLAXO",       qty: 300,   avgCost: 2799.53 },
+  { symbol: "HEG",         qty: 630,   avgCost: 507.88 },
+  { symbol: "KTKBANK",     qty: 1320,  avgCost: 244.49 },
+  { symbol: "LIQUIDBEES",  qty: 3802,  avgCost: 997.45 },
+  { symbol: "MID150BEES",  qty: 1990,  avgCost: 225.52 },
+  { symbol: "NIFTYBEES",   qty: 6968,  avgCost: 286.38 },
+  { symbol: "OIL",         qty: 693,   avgCost: 468.55 },
+  { symbol: "ONGC",        qty: 1145,  avgCost: 283.69 },
+  { symbol: "SBIN",        qty: 1543,  avgCost: 613.66, note: "EVENT" },
+  { symbol: "SOUTHBANK",   qty: 13800, avgCost: 34.90,  note: "EVENT" },
+  { symbol: "UJJIVANSFB",  qty: 5775,  avgCost: 58.58,  note: "EVENT" }
+];
+
+const TRADEBOOK_FILES = [
+  "tradebooks/tradebook-JWT515-EQ.csv",
+  "tradebooks/tradebook-JWT515-EQ-1.csv",
+  "tradebooks/tradebook-JWT515-EQ-2.csv",
+  "tradebooks/tradebook-JWT515-EQ-3.csv",
+  "tradebooks/tradebook-JWT515-EQ-4.csv"
+];
+
+const REFRESH_MS = 60 * 60 * 1000; // 1 hour
+const SHEET_KEY = "rimali.priceSheetUrl";
+const CACHE_KEY = "rimali.priceCache";
+
+// ============================================================
+// FORMATTING
+// ============================================================
+function inr(n, decimals = 2) {
+  if (!isFinite(n)) return "—";
+  const sign = n < 0 ? "-" : "";
+  const fmt = Math.abs(n).toLocaleString("en-IN", {
+    minimumFractionDigits: decimals, maximumFractionDigits: decimals
+  });
+  return sign + "₹" + fmt;
+}
+function pct(n, decimals = 2) {
+  if (!isFinite(n)) return "—";
+  return (n >= 0 ? "+" : "") + n.toLocaleString("en-IN", {
+    minimumFractionDigits: decimals, maximumFractionDigits: decimals
+  }) + "%";
+}
+function num(n, decimals = 2) {
+  if (!isFinite(n)) return "—";
+  return n.toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+function pnlClass(n) { return n > 0 ? "pos" : n < 0 ? "neg" : ""; }
+
+// ============================================================
+// PRICES (from a published Google Sheet CSV)
+// ============================================================
+function getSheetUrl() { return localStorage.getItem(SHEET_KEY) || ""; }
+function setSheetUrl(u) { localStorage.setItem(SHEET_KEY, (u || "").trim()); }
+
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function writeCache(c) { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); }
+
+function parsePriceCsv(text) {
+  const out = {};
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    const parts = line.split(",").map(s => s.trim().replace(/^"|"$/g, ""));
+    if (parts.length < 2) continue;
+    const sym = parts[0].toUpperCase();
+    if (sym === "SYMBOL" || sym === "TICKER") continue;
+    const px = parseFloat(parts[1].replace(/,/g, ""));
+    if (!isFinite(px)) continue;
+    out[sym] = px;
+    const m = sym.match(/^(?:NSE|BSE):(.+)$/);
+    if (m) out[m[1]] = px;
+  }
+  return out;
+}
+
+async function fetchPrices(force) {
+  const url = getSheetUrl();
+  const cached = readCache();
+  const now = Date.now();
+  if (!force && cached && now - cached.fetchedAt < REFRESH_MS) return cached;
+  if (!url) return cached || { fetchedAt: 0, prices: {} };
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    const prices = parsePriceCsv(text);
+    const fresh = { fetchedAt: now, prices };
+    writeCache(fresh);
+    return fresh;
+  } catch (e) {
+    console.warn("price fetch failed", e);
+    return cached || { fetchedAt: 0, prices: {} };
+  }
+}
+
+function priceFor(map, sym) {
+  if (!map) return undefined;
+  const candidates = [sym, sym.toUpperCase(), "NSE:" + sym.toUpperCase(), "BSE:" + sym.toUpperCase()];
+  for (const k of candidates) if (map[k] != null) return map[k];
+  return undefined;
+}
+
+// ============================================================
+// TRADEBOOK CSV PARSING
+// ============================================================
+function parseTradeCsv(text) {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (!lines.length) return [];
+  const header = lines[0].split(",");
+  const ix = (k) => header.indexOf(k);
+  const idx = {
+    symbol: ix("symbol"), tradeDate: ix("trade_date"),
+    tradeType: ix("trade_type"), quantity: ix("quantity"),
+    price: ix("price"), tradeId: ix("trade_id"),
+    orderExecutionTime: ix("order_execution_time")
+  };
+  const out = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c = lines[i].split(",");
+    const tt = c[idx.tradeType];
+    if (tt !== "buy" && tt !== "sell") continue;
+    out.push({
+      symbol: c[idx.symbol],
+      tradeDate: c[idx.tradeDate],
+      tradeType: tt,
+      quantity: parseFloat(c[idx.quantity]),
+      price: parseFloat(c[idx.price]),
+      tradeId: c[idx.tradeId],
+      orderExecutionTime: c[idx.orderExecutionTime]
+    });
+  }
+  return out;
+}
+
+async function loadAllTrades() {
+  const seen = new Set();
+  const all = [];
+  for (const f of TRADEBOOK_FILES) {
+    try {
+      const r = await fetch(f);
+      if (!r.ok) continue;
+      const text = await r.text();
+      for (const t of parseTradeCsv(text)) {
+        if (seen.has(t.tradeId)) continue;
+        seen.add(t.tradeId);
+        all.push(t);
+      }
+    } catch {}
+  }
+  all.sort((a, b) => a.orderExecutionTime.localeCompare(b.orderExecutionTime));
+  return all;
+}
+
+// ============================================================
+// FIFO P&L
+// ============================================================
+function computeFifo(trades) {
+  const buyQ = new Map();
+  const closed = [];
+  for (const t of trades) {
+    let q = buyQ.get(t.symbol);
+    if (!q) { q = []; buyQ.set(t.symbol, q); }
+    if (t.tradeType === "buy") {
+      q.push({ qty: t.quantity, price: t.price, date: t.tradeDate });
+    } else {
+      let remaining = t.quantity;
+      while (remaining > 1e-9 && q.length > 0) {
+        const lot = q[0];
+        const match = Math.min(lot.qty, remaining);
+        const invested = lot.price * match;
+        const pnl = (t.price - lot.price) * match;
+        closed.push({
+          symbol: t.symbol, qty: match,
+          buyPrice: lot.price, sellPrice: t.price,
+          buyDate: lot.date, sellDate: t.tradeDate,
+          invested, proceeds: t.price * match, pnl,
+          pct: lot.price > 0 ? (pnl / invested) * 100 : 0
+        });
+        lot.qty -= match;
+        remaining -= match;
+        if (lot.qty <= 1e-9) q.shift();
+      }
+      if (remaining > 1e-9) {
+        closed.push({
+          symbol: t.symbol, qty: remaining,
+          buyPrice: 0, sellPrice: t.price,
+          buyDate: "", sellDate: t.tradeDate,
+          invested: 0, proceeds: t.price * remaining, pnl: t.price * remaining, pct: 0
+        });
+      }
+    }
+  }
+  const agg = new Map();
+  for (const l of closed) {
+    const cur = agg.get(l.symbol) || { symbol: l.symbol, qty: 0, invested: 0, pnl: 0 };
+    cur.qty += l.qty;
+    cur.invested += l.invested;
+    cur.pnl += l.pnl;
+    agg.set(l.symbol, cur);
+  }
+  const bySymbol = Array.from(agg.values()).map(s => ({
+    ...s, pct: s.invested > 0 ? (s.pnl / s.invested) * 100 : 0
+  }));
+  bySymbol.sort((a, b) => b.pnl - a.pnl);
+  const totalRealised = closed.reduce((a, l) => a + l.pnl, 0);
+  const totalInvestedClosed = closed.reduce((a, l) => a + l.invested, 0);
+  return { closedLots: closed, bySymbol, totalRealised, totalInvestedClosed };
+}
+
+// ============================================================
+// RENDERING — HOLDINGS
+// ============================================================
+let priceCache = null;
+let refreshing = false;
+
+function renderHoldings() {
+  const prices = priceCache ? priceCache.prices : {};
+  const tbody = document.getElementById("h-rows");
+  tbody.innerHTML = "";
+  let totalInv = 0, totalCur = 0, anyMissing = false;
+  for (const h of HOLDINGS) {
+    const ltp = priceFor(prices, h.symbol);
+    const invested = h.qty * h.avgCost;
+    const curVal = ltp != null ? h.qty * ltp : invested;
+    const pnl = ltp != null ? curVal - invested : 0;
+    const pnlPct = invested > 0 && ltp != null ? (pnl / invested) * 100 : 0;
+    totalInv += invested;
+    totalCur += curVal;
+    if (ltp == null) anyMissing = true;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <span class="sym">${h.symbol}</span>${h.note ? `<span class="note">${h.note}</span>` : ""}
+        <span class="meta">Qty ${num(h.qty, 0)} · Avg ${num(h.avgCost)}</span>
+      </td>
+      <td class="right">${ltp != null ? num(ltp) : '<span style="color:var(--dim)">—</span>'}</td>
+      <td class="right">
+        ${inr(curVal)}
+        <span class="meta">${inr(invested)}</span>
+      </td>
+      <td class="right ${ltp != null ? pnlClass(pnl) : ''}">
+        ${ltp != null ? inr(pnl) : '<span style="color:var(--dim)">—</span>'}
+        <span class="pct">${ltp != null ? pct(pnlPct) : ""}</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("h-count").textContent = HOLDINGS.length;
+  document.getElementById("h-invested").textContent = inr(totalInv);
+  document.getElementById("h-curval").textContent = inr(totalCur);
+
+  const totalPnl = totalCur - totalInv;
+  const totalPct = totalInv > 0 ? (totalPnl / totalInv) * 100 : 0;
+  const havePrices = priceCache && priceCache.fetchedAt > 0;
+  const pnlEl = document.getElementById("h-pnl");
+  const pnlPctEl = document.getElementById("h-pnl-pct");
+  if (havePrices) {
+    pnlEl.textContent = inr(totalPnl);
+    pnlEl.className = "value " + pnlClass(totalPnl);
+    pnlPctEl.textContent = pct(totalPct);
+    pnlPctEl.className = "sub " + pnlClass(totalPnl);
+  } else {
+    pnlEl.textContent = "—";
+    pnlEl.className = "value";
+    pnlPctEl.textContent = "—";
+    pnlPctEl.className = "sub";
+  }
+
+  const lastEl = document.getElementById("h-last");
+  const lastSubEl = document.getElementById("h-last-sub");
+  if (havePrices) {
+    const d = new Date(priceCache.fetchedAt);
+    lastEl.textContent = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+    lastSubEl.textContent = d.toLocaleDateString("en-IN");
+  } else {
+    lastEl.textContent = "—";
+    lastSubEl.textContent = "set price sheet in ⚙";
+  }
+
+  const alert = document.getElementById("h-alert");
+  if (!havePrices) {
+    alert.innerHTML = '<div class="alert">No price feed configured yet. Open the ⚙ tab and paste your published Google Sheet CSV URL.</div>';
+  } else if (anyMissing) {
+    alert.innerHTML = '<div class="alert">Some symbols are missing prices in the sheet — make sure each ticker in column A matches the holding symbol exactly.</div>';
+  } else {
+    alert.innerHTML = "";
+  }
+
+  document.getElementById("btn-refresh").disabled = refreshing;
+  document.getElementById("btn-refresh").textContent = refreshing ? "Refreshing…" : "Refresh";
+}
+
+async function refreshPrices(force) {
+  refreshing = true;
+  renderHoldings();
+  try {
+    priceCache = await fetchPrices(force);
+  } finally {
+    refreshing = false;
+    renderHoldings();
+  }
+}
+
+// ============================================================
+// RENDERING — TRADES
+// ============================================================
+let allTrades = [];
+let fifo = null;
+let tradesMode = "summary";
+let tradesFilter = "";
+
+async function loadTradesIfNeeded() {
+  if (fifo) return;
+  document.getElementById("t-content").innerHTML = '<div class="empty">Loading trades…</div>';
+  allTrades = await loadAllTrades();
+  fifo = computeFifo(allTrades);
+  document.getElementById("t-count").textContent = num(allTrades.length, 0);
+  document.getElementById("t-lots").textContent = num(fifo.closedLots.length, 0);
+  const pnlEl = document.getElementById("t-pnl");
+  const pctEl = document.getElementById("t-pnl-pct");
+  pnlEl.textContent = inr(fifo.totalRealised);
+  pnlEl.className = "value " + pnlClass(fifo.totalRealised);
+  const totalPct = fifo.totalInvestedClosed > 0 ? (fifo.totalRealised / fifo.totalInvestedClosed) * 100 : 0;
+  pctEl.textContent = pct(totalPct);
+  pctEl.className = "sub " + pnlClass(fifo.totalRealised);
+  document.getElementById("t-deployed").textContent = inr(fifo.totalInvestedClosed);
+  renderTrades();
+}
+
+function renderTrades() {
+  const c = document.getElementById("t-content");
+  if (!fifo) { c.innerHTML = '<div class="empty">Loading trades…</div>'; return; }
+
+  if (tradesMode === "summary") {
+    const rows = fifo.bySymbol.map(r => `
+      <tr>
+        <td><span class="sym">${r.symbol}</span></td>
+        <td class="right">${num(r.qty, 0)}</td>
+        <td class="right">${inr(r.invested)}</td>
+        <td class="right ${pnlClass(r.pnl)}">
+          ${inr(r.pnl)}
+          <span class="pct">${pct(r.pct)}</span>
+        </td>
+      </tr>
+    `).join("");
+    c.innerHTML = `
+      <div class="table-wrap" style="margin-top:12px">
+        <table>
+          <thead><tr>
+            <th>Symbol</th>
+            <th class="right">Qty sold</th>
+            <th class="right">Invested</th>
+            <th class="right">Realised P&amp;L</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  } else if (tradesMode === "winners" || tradesMode === "losers") {
+    const sorted = [...fifo.closedLots].sort((a, b) =>
+      tradesMode === "winners" ? b.pnl - a.pnl : a.pnl - b.pnl
+    ).slice(0, 25);
+    c.innerHTML = '<div class="lot-list">' + sorted.map(l => `
+      <div class="lot">
+        <div class="lot-top">
+          <span class="l-sym">${l.symbol}</span>
+          <span class="l-pnl ${pnlClass(l.pnl)}">${inr(l.pnl)} <span class="l-pct">(${pct(l.pct)})</span></span>
+        </div>
+        <div class="lot-meta">${num(l.qty, 0)} × buy ${l.buyPrice ? num(l.buyPrice) : "—"} → sell ${num(l.sellPrice)}</div>
+        <div class="lot-date">${l.buyDate || "?"} → ${l.sellDate}</div>
+      </div>
+    `).join("") + "</div>";
+  } else if (tradesMode === "all") {
+    const f = tradesFilter.trim().toUpperCase();
+    const list = (f ? allTrades.filter(t => t.symbol.includes(f)) : allTrades).slice().reverse();
+    const limited = list.slice(0, 500);
+    const rows = limited.map(t => `
+      <tr>
+        <td style="color:var(--muted);font-size:11px;">${t.tradeDate}</td>
+        <td>
+          <span class="sym">${t.symbol}</span>
+          <span style="font-size:9px; text-transform:uppercase; margin-left:4px; color:${t.tradeType === 'buy' ? 'var(--pos)' : 'var(--neg)'};">${t.tradeType}</span>
+        </td>
+        <td class="right">${num(t.quantity, 0)}</td>
+        <td class="right">${num(t.price)}</td>
+      </tr>
+    `).join("");
+    c.innerHTML = `
+      <input class="input" id="t-filter" placeholder="Filter by symbol…" value="${tradesFilter.replace(/"/g, "&quot;")}">
+      <div class="table-wrap" style="margin-top:12px">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Symbol</th><th class="right">Qty</th><th class="right">Price</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        ${list.length > 500 ? `<div style="padding:10px 12px; font-size:11px; color:var(--dim); border-top:1px solid var(--border);">Showing latest 500 of ${list.length}. Use the filter to narrow down.</div>` : ""}
+      </div>
+    `;
+    const fi = document.getElementById("t-filter");
+    if (fi) {
+      fi.addEventListener("input", (e) => {
+        tradesFilter = e.target.value;
+        renderTrades();
+        // Restore focus + cursor pos after re-render
+        const f2 = document.getElementById("t-filter");
+        if (f2) {
+          f2.focus();
+          f2.setSelectionRange(f2.value.length, f2.value.length);
+        }
+      });
+    }
+  }
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function showTab(name) {
+  for (const t of ["holdings", "trades", "settings"]) {
+    document.getElementById("tab-" + t).classList.toggle("hidden", t !== name);
+  }
+  for (const b of document.querySelectorAll("nav.tabs button")) {
+    b.classList.toggle("active", b.dataset.tab === name);
+  }
+  if (name === "trades") loadTradesIfNeeded();
+}
+
+// ============================================================
+// SETTINGS WIRING
+// ============================================================
+function setupSettings() {
+  const input = document.getElementById("s-url");
+  input.value = getSheetUrl();
+  document.getElementById("s-save").addEventListener("click", async () => {
+    setSheetUrl(input.value);
+    const msg = document.getElementById("s-savedmsg");
+    msg.textContent = "Saved ✓";
+    setTimeout(() => msg.textContent = "", 1500);
+    await refreshPrices(true);
+  });
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => showTab(b.dataset.tab));
+});
+document.querySelectorAll(".subtab").forEach(b => {
+  b.addEventListener("click", () => {
+    tradesMode = b.dataset.mode;
+    document.querySelectorAll(".subtab").forEach(x => x.classList.toggle("active", x === b));
+    renderTrades();
+  });
+});
+document.getElementById("btn-refresh").addEventListener("click", () => refreshPrices(true));
+
+setupSettings();
+
+// initial load: read cached prices, render, then try to refresh
+priceCache = readCache();
+renderHoldings();
+refreshPrices(false);
+
+// hourly auto-refresh
+setInterval(() => refreshPrices(true), REFRESH_MS);
+// refresh when app comes back into focus
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") refreshPrices(false);
+});
+
+// register service worker (PWA install + offline)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
